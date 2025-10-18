@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Division } from 'src/entity/division.entity';
+import { Division } from '../entity/division.entity';
 import { CreateDivisionDto } from './dto/create-division.dto';
 
 @Injectable()

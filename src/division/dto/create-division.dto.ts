@@ -1,13 +1,4 @@
-import {
-  IsNumber,
-  IsString,
-  IsNotEmpty,
-  MaxLength,
-  IsEmpty,
-  ValidateNested,
-  IsArray,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNumber, IsString, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class CreateDivisionDto {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -26,16 +17,4 @@ export class CreateDivisionDto {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @IsString()
   embajador: string;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @IsEmpty()
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @Type(() => CreateDivisionDto)
-  parent: CreateDivisionDto;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @IsArray()
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @ValidateNested({ each: true })
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @Type(() => CreateDivisionDto)
-  divisiones: CreateDivisionDto[];
 }

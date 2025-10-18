@@ -21,7 +21,6 @@ export class ResponseDivisionDto {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @Expose()
   parent: ResponseDivisionDto;
-
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @IsArray()
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
