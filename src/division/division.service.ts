@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -23,6 +24,12 @@ export class DivisionService {
    * @returns
    */
   async addPadre(division: CreateDivisionDto): Promise<Division> {
+    const exists = await this.divisionRepository.findOne({
+      where: { nombre: division.nombre },
+    });
+    if (exists) {
+      throw new ConflictException('Ya existe una Division con ese nombre');
+    }
     const newDivision = this.divisionRepository.create(division);
     return await this.divisionRepository.save(newDivision);
   }
@@ -41,11 +48,20 @@ export class DivisionService {
    * @param {number} id
    * @returns {Promise<Division[]>}
    */
-  async soloById(id: number): Promise<Division[]> {
-    return this.divisionRepository.find({
+  async soloById(id: number): Promise<Division> {
+    const division = await this.divisionRepository.find({
       where: { id: id },
       relations: ['divisiones', 'parent'],
     });
+    if (!division) {
+      throw new NotFoundException('Division no encontrada');
+    }
+
+    if (!Array.isArray(division)) {
+      throw new NotFoundException('No tiene elementos');
+    }
+
+    return division[0];
   }
 
   /**
@@ -103,12 +119,21 @@ export class DivisionService {
    */
 
   async updateDivision(
-    updatedData: Partial<UpdateDivisionDto>,
+    id: number,
+    updatedData: UpdateDivisionDto,
   ): Promise<Division> {
-    const id = updatedData.id;
     const parent = await this.divisionRepository.findOneBy({ id });
     if (!parent) {
       throw new Error('Division no encontrada');
+    }
+    // eslint-disable-next-line no-extra-boolean-cast
+    if (!!updatedData.nombre) {
+      const exists = await this.divisionRepository.findOne({
+        where: { nombre: updatedData.nombre },
+      });
+      if (exists) {
+        throw new ConflictException('Ya existe una Division con ese nombre');
+      }
     }
     Object.assign(parent, updatedData);
     return this.divisionRepository.save(parent);
@@ -143,7 +168,7 @@ export class DivisionService {
    * @param divisionesId
    * @returns
    */
-  async padreDelHijo(
+  async padreDelHijos(
     parentId: number,
     divisionesId: number[],
   ): Promise<Division> {
