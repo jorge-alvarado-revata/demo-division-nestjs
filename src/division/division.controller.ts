@@ -6,71 +6,106 @@ import {
   Param,
   Delete,
   Put,
+  ForbiddenException,
+  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { DivisionService } from './division.service';
 import { ResponseDivisionDto } from './dto/response-division.dto';
 import { CreateDivisionDto } from './dto/create-division.dto';
+import { validate } from 'class-validator';
 
 @Controller('division')
 export class DivisionController {
   constructor(private readonly divisionService: DivisionService) {}
 
-  @Post()
-  async createDivision(
+  @Post('add/padre')
+  async addPadre(
     @Body() division: CreateDivisionDto,
   ): Promise<ResponseDivisionDto> {
-    return this.divisionService.createDivision(division);
+    try {
+      const errors = await validate(division);
+      if (errors.length > 0) {
+        throw new BadRequestException('Datos de entrada invalidos.');
+      }
+      return this.divisionService.addPadre(division);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new ForbiddenException();
+    }
   }
 
-  @Get()
-  getAllDivisiones(): Promise<ResponseDivisionDto[]> {
-    return this.divisionService.getAllDivisiones();
+  @Get('todos')
+  todos(): Promise<ResponseDivisionDto[]> {
+    return this.divisionService.getTodos();
   }
 
-  @Get(':id')
-  async getDivisionById(@Param('id') id: number): Promise<ResponseDivisionDto> {
-    const division = await this.divisionService.getDivisionById(+id);
+  @Get('hijos/:id')
+  hijosById(@Param('id') id: number): Promise<ResponseDivisionDto[]> {
+    return this.divisionService.hijosById(id);
+  }
+
+  @Get('solo/:id')
+  async soloById(@Param('id') id: number): Promise<ResponseDivisionDto> {
+    const division = await this.divisionService.soloById(id);
     if (!division) {
       throw new NotFoundException('Division no encontrada');
     }
     return division;
   }
 
-  @Put()
-  async asignaPadre(
+  @Put('setpadre')
+  async setPadre(
     @Param('id') id: number,
     @Param('Parentid') ParentId: number,
-  ): Promise<ResponseDivisionDto> {
-    return this.asignaPadre(id, ParentId);
+  ): Promise<ResponseDivisionDto | null> {
+    return this.divisionService.setPadre(id, ParentId);
   }
 
-  @Put()
-  async updateDivision(
+  @Put('update')
+  async update(
     @Param('id') id: number,
     @Param('updateData') updateData: Partial<CreateDivisionDto>,
   ): Promise<ResponseDivisionDto> {
-    return this.updateDivision(id, updateData);
+    try {
+      const errors = await validate(updateData);
+      if (errors.length > 0) {
+        throw new BadRequestException('Datos de entrada invalidos.');
+      }
+      return this.divisionService.updateDivision(id, updateData);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new ForbiddenException();
+    }
   }
 
-  @Put()
-  async agregaDivisionAPadre(
+  @Put('padre/add/hijo')
+  async padreAddHijo(
     @Param('parentId') parentId: number,
-    @Param('newChildrenData') newChildrenData: CreateDivisionDto[],
+    @Param('newChildrenData') newChildrenData: CreateDivisionDto,
   ): Promise<ResponseDivisionDto> {
-    return this.agregaDivisionAPadre(parentId, newChildrenData);
+    try {
+      const errors = await validate(newChildrenData);
+      if (errors.length > 0) {
+        throw new BadRequestException('Datos de entrada invalidos.');
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      throw new ForbiddenException();
+    }
+    return this.divisionService.padreAddHijo(parentId, newChildrenData);
   }
 
-  @Put()
-  async delDivisionAPadre(
+  @Put('padre/del/hijo')
+  async padreDelHijo(
     @Param('parentId') parentId: number,
     @Param('divisionesId') divisionesId: number[],
   ): Promise<ResponseDivisionDto> {
-    return this.delDivisionAPadre(parentId, divisionesId);
+    return this.divisionService.padreDelHijo(parentId, divisionesId);
   }
 
   @Delete()
-  async remove(@Param('id') id: number): Promise<void> {
-    return this.remove(id);
+  async remove(@Param('id') id: number): Promise<ResponseDivisionDto> {
+    return this.divisionService.remove(id);
   }
 }

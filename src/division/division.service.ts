@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Division } from '../entity/division.entity';
 import { CreateDivisionDto } from './dto/create-division.dto';
+import { ResponseDivisionDto } from './dto/response-division.dto';
 
 @Injectable()
 export class DivisionService {
@@ -16,12 +21,16 @@ export class DivisionService {
    * @param division
    * @returns
    */
-  async createDivision(division: CreateDivisionDto): Promise<Division> {
+  async addPadre(division: CreateDivisionDto): Promise<Division> {
     const newDivision = this.divisionRepository.create(division);
     return await this.divisionRepository.save(newDivision);
   }
 
-  async getAllDivisiones(): Promise<Division[]> {
+  /**
+   * Obtiene el listado de todos las divisiones
+   * @returns {Promise<Division[]>}
+   */
+  async getTodos(): Promise<Division[]> {
     return this.divisionRepository.find({
       relations: ['divisiones', 'parent'],
     });
@@ -31,8 +40,20 @@ export class DivisionService {
    * @param {number} id
    * @returns {Promise<Division[]>}
    */
-  async getDivisionById(id: number): Promise<Division | null> {
+  async soloById(id: number): Promise<Division | null> {
     return this.divisionRepository.findOneBy({ id });
+  }
+
+  /**
+   * Obtiene la lista de divisiones
+   * @param {number} id
+   * @returns {Promise<Division[]>}
+   */
+  async hijosById(id: number): Promise<Division[]> {
+    return this.divisionRepository.find({
+      where: { id: id },
+      relations: ['divisiones'],
+    });
   }
 
   /**
@@ -41,7 +62,12 @@ export class DivisionService {
    * @param {Division} parent
    * @returns Promise<Division | null>
    */
-  async asignaPadre(id: number, parentId: number): Promise<Division | null> {
+  async setPadre(id: number, parentId: number): Promise<Division | null> {
+    if (id == parentId) {
+      throw new BadRequestException(
+        'No se puede asignar el mismo elemento como padre.',
+      );
+    }
     const division = await this.divisionRepository.findOneBy({ id: id });
     if (!division) {
       throw new NotFoundException('Division no encontrada');
@@ -52,6 +78,7 @@ export class DivisionService {
     if (!divisionPadre) {
       throw new NotFoundException('Division Padre no encontrada');
     }
+
     division.parent = divisionPadre;
     await this.divisionRepository.save(division);
     return division;
@@ -82,9 +109,9 @@ export class DivisionService {
    * @param newChildrenData
    * @returns
    */
-  async agregaDivisionAPadre(
+  async padreAddHijo(
     parentId: number,
-    newChildrenData: CreateDivisionDto[],
+    newChildrenData: CreateDivisionDto,
   ): Promise<Division> {
     const parent = await this.divisionRepository.findOne({
       where: { id: parentId },
@@ -93,22 +120,19 @@ export class DivisionService {
     if (!parent) {
       throw new NotFoundException('Padre no encontrado');
     }
-
-    const newChildren = newChildrenData.map((data) =>
-      this.divisionRepository.create(data),
-    );
-    parent.divisiones = [...parent.divisiones, ...newChildren];
+    const newChildren = this.divisionRepository.create(newChildrenData);
+    parent.divisiones.push(newChildren);
     await this.divisionRepository.save(parent);
     return parent;
   }
 
   /**
-   * Elimina una division de un padre
+   * Retira hijos de un padre
    * @param parentId
    * @param divisionesId
    * @returns
    */
-  async delDivisionAPadre(
+  async padreDelHijo(
     parentId: number,
     divisionesId: number[],
   ): Promise<Division> {
@@ -131,7 +155,13 @@ export class DivisionService {
    * elimina una division
    * @param id
    */
-  async remove(id: number): Promise<void> {
-    await this.divisionRepository.delete(id);
+  async remove(id: number): Promise<ResponseDivisionDto> {
+    const divisionToRemove = await this.divisionRepository.findOne({
+      where: { id: id },
+    });
+    if (!divisionToRemove) {
+      throw new NotFoundException('Division no encontrada');
+    }
+    return this.divisionRepository.remove(divisionToRemove);
   }
 }

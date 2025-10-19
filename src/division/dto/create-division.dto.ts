@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsInt, IsString, IsNotEmpty, MaxLength, Min } from 'class-validator';
 
 export class CreateDivisionDto {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -9,10 +9,12 @@ export class CreateDivisionDto {
   @MaxLength(45, { message: 'Nombre no debe exceder de 45 caracteres' })
   nombre: string;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   nivel: number;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   colaboradores: number;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @IsString()
