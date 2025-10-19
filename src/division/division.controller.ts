@@ -128,7 +128,7 @@ export class DivisionController {
     return this.divisionService.padreDelHijos(eliminaHijos);
   }
 
-  @Delete('delete')
+  @Delete('delete/:id')
   @ApiOperation({ summary: 'elimina una division' })
   @ApiOkResponse({ type: ResponseDivisionDto })
   async remove(@Param('id') id: number): Promise<ResponseDivisionDto> {

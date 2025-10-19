@@ -33,6 +33,8 @@ export class Division {
   @ManyToOne(() => Division, (division) => division.divisiones)
   parent: Division;
 
-  @OneToMany(() => Division, (division) => division.parent)
+  @OneToMany(() => Division, (division) => division.parent, {
+    onDelete: 'SET NULL',
+  })
   divisiones: Division[];
 }
