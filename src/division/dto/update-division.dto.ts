@@ -1,6 +1,16 @@
-import { IsInt, IsString, IsNotEmpty, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  Min,
+  IsNumber,
+} from 'class-validator';
 
-export class CreateDivisionDto {
+export class UpdateDivisionDto {
+  @IsNotEmpty()
+  @IsNumber()
+  id: number;
   @IsNotEmpty()
   @IsString()
   @MaxLength(45, { message: 'Nombre no debe exceder de 45 caracteres' })

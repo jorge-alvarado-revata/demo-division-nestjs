@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Division } from '../entity/division.entity';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { ResponseDivisionDto } from './dto/response-division.dto';
+import { UpdateDivisionDto } from './dto/update-division.dto';
 
 @Injectable()
 export class DivisionService {
@@ -40,20 +41,30 @@ export class DivisionService {
    * @param {number} id
    * @returns {Promise<Division[]>}
    */
-  async soloById(id: number): Promise<Division | null> {
-    return this.divisionRepository.findOneBy({ id });
+  async soloById(id: number): Promise<Division[]> {
+    return this.divisionRepository.find({
+      where: { id: id },
+      relations: ['divisiones', 'parent'],
+    });
   }
 
   /**
-   * Obtiene la lista de divisiones
+   * Obtiene la lista de hijos de una division
    * @param {number} id
    * @returns {Promise<Division[]>}
    */
   async hijosById(id: number): Promise<Division[]> {
-    return this.divisionRepository.find({
+    const division = await this.divisionRepository.find({
       where: { id: id },
       relations: ['divisiones'],
     });
+    if (!division) {
+      throw new NotFoundException('Division no encontrada');
+    }
+    if (!Array.isArray(division)) {
+      throw new NotFoundException('No tiene elementos');
+    }
+    return division[0].divisiones;
   }
 
   /**
@@ -92,9 +103,9 @@ export class DivisionService {
    */
 
   async updateDivision(
-    id: number,
-    updatedData: Partial<CreateDivisionDto>,
+    updatedData: Partial<UpdateDivisionDto>,
   ): Promise<Division> {
+    const id = updatedData.id;
     const parent = await this.divisionRepository.findOneBy({ id });
     if (!parent) {
       throw new Error('Division no encontrada');

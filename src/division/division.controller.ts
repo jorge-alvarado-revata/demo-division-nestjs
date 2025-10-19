@@ -14,6 +14,7 @@ import { DivisionService } from './division.service';
 import { ResponseDivisionDto } from './dto/response-division.dto';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { validate } from 'class-validator';
+import { UpdateDivisionDto } from './dto/update-division.dto';
 
 @Controller('division')
 export class DivisionController {
@@ -46,7 +47,7 @@ export class DivisionController {
   }
 
   @Get('solo/:id')
-  async soloById(@Param('id') id: number): Promise<ResponseDivisionDto> {
+  async soloById(@Param('id') id: number): Promise<ResponseDivisionDto[]> {
     const division = await this.divisionService.soloById(id);
     if (!division) {
       throw new NotFoundException('Division no encontrada');
@@ -54,25 +55,24 @@ export class DivisionController {
     return division;
   }
 
-  @Put('setpadre')
+  @Put('setpadre/:id/:parentId')
   async setPadre(
     @Param('id') id: number,
-    @Param('Parentid') ParentId: number,
+    @Param('parentId') parentId: number,
   ): Promise<ResponseDivisionDto | null> {
-    return this.divisionService.setPadre(id, ParentId);
+    return this.divisionService.setPadre(id, parentId);
   }
 
-  @Put('update')
+  @Post('update/:id')
   async update(
-    @Param('id') id: number,
-    @Param('updateData') updateData: Partial<CreateDivisionDto>,
+    @Body('updateData') updateData: Partial<UpdateDivisionDto>,
   ): Promise<ResponseDivisionDto> {
     try {
       const errors = await validate(updateData);
       if (errors.length > 0) {
         throw new BadRequestException('Datos de entrada invalidos.');
       }
-      return this.divisionService.updateDivision(id, updateData);
+      return this.divisionService.updateDivision(updateData);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new ForbiddenException();
