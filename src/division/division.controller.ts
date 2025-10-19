@@ -22,6 +22,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import { UpdateDivisionDto } from './dto/update-division.dto';
+import { EliminaHijosDto } from './dto/elimina-hijos-division.dto';
 
 @ApiTags('divisiones')
 @Controller('division')
@@ -117,14 +118,14 @@ export class DivisionController {
     }
   }
 
-  @Put('padre/retira:parentId')
+  @Post('padre/retira')
   @ApiOperation({ summary: 'retira uno o muchos hijos a un padre' })
+  @ApiBody({ type: EliminaHijosDto })
   @ApiOkResponse({ type: ResponseDivisionDto })
   async padreDelHijo(
-    @Param('parentId') parentId: number,
-    @Param('divisionesId') divisionesId: number[],
+    @Body() eliminaHijos: EliminaHijosDto,
   ): Promise<ResponseDivisionDto> {
-    return this.divisionService.padreDelHijos(parentId, divisionesId);
+    return this.divisionService.padreDelHijos(eliminaHijos);
   }
 
   @Delete('delete')

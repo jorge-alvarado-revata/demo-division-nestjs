@@ -11,6 +11,7 @@ import { Division } from '../entity/division.entity';
 import { CreateDivisionDto } from './dto/create-division.dto';
 import { ResponseDivisionDto } from './dto/response-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
+import { EliminaHijosDto } from './dto/elimina-hijos-division.dto';
 
 @Injectable()
 export class DivisionService {
@@ -193,10 +194,9 @@ export class DivisionService {
    * @param divisionesId
    * @returns
    */
-  async padreDelHijos(
-    parentId: number,
-    divisionesId: number[],
-  ): Promise<Division> {
+  async padreDelHijos(eliminaHijos: EliminaHijosDto): Promise<Division> {
+    const parentId = eliminaHijos.id;
+    const hijos = eliminaHijos.lista;
     const parent = await this.divisionRepository.findOne({
       where: { id: parentId },
       relations: ['divisiones'],
@@ -206,7 +206,7 @@ export class DivisionService {
     }
 
     parent.divisiones = parent.divisiones.filter(
-      (child) => !divisionesId.includes(child.id),
+      (child) => !hijos.includes(child.id),
     );
     await this.divisionRepository.save(parent);
     return parent;
@@ -217,12 +217,20 @@ export class DivisionService {
    * @param id
    */
   async remove(id: number): Promise<ResponseDivisionDto> {
-    const divisionToRemove = await this.divisionRepository.findOne({
-      where: { id: id },
-    });
-    if (!divisionToRemove) {
-      throw new NotFoundException('Division no encontrada');
+    try {
+      const divisionToRemove = await this.divisionRepository.findOneOrFail({
+        where: { id: id },
+      });
+      if (!divisionToRemove) {
+        throw new NotFoundException('Division no encontrada');
+      }
+      return await this.divisionRepository.remove(divisionToRemove);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('Division no encontrada');
+      } else {
+        throw new NotImplementedException('Un error no identificado');
+      }
     }
-    return this.divisionRepository.remove(divisionToRemove);
   }
 }

@@ -33,8 +33,6 @@ export class Division {
   @ManyToOne(() => Division, (division) => division.divisiones)
   parent: Division;
 
-  @OneToMany(() => Division, (division) => division.parent, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => Division, (division) => division.parent)
   divisiones: Division[];
 }
