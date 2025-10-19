@@ -28,22 +28,23 @@ import { UpdateDivisionDto } from './dto/update-division.dto';
 export class DivisionController {
   constructor(private readonly divisionService: DivisionService) {}
 
-  @Post('add/padre')
-  @ApiOperation({ summary: 'Crear division' })
-  @ApiOkResponse({ type: CreateDivisionDto })
-  async addPadre(
-    @Body() division: CreateDivisionDto,
+  @Post('agrega')
+  @ApiOperation({ summary: 'agrega una nueva division con o sin padre' })
+  @ApiBody({ type: CreateDivisionDto })
+  @ApiOkResponse({ type: ResponseDivisionDto })
+  async agrega(
+    @Body() newChildrenData: CreateDivisionDto,
   ): Promise<ResponseDivisionDto> {
     try {
-      const errors = await validate(division);
+      const errors = await validate(newChildrenData);
       if (errors.length > 0) {
         throw new BadRequestException('Datos de entrada invalidos.');
       }
-      return this.divisionService.addPadre(division);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new ForbiddenException();
     }
+    return this.divisionService.agrega(newChildrenData);
   }
 
   @Get('todos')
@@ -109,35 +110,15 @@ export class DivisionController {
       if (errors.length > 0) {
         throw new BadRequestException('Datos de entrada invalidos.');
       }
-      return this.divisionService.updateDivision(id, updateData);
+      return this.divisionService.update(id, updateData);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       throw new ForbiddenException();
     }
-  }
-
-  @Put('padre/add/:parentId')
-  @ApiOperation({ summary: 'agrega un hijo a un padre' })
-  @ApiBody({ type: CreateDivisionDto })
-  @ApiOkResponse({ type: ResponseDivisionDto })
-  async padreAddHijo(
-    @Param('parentId') parentId: number,
-    @Body() newChildrenData: CreateDivisionDto,
-  ): Promise<ResponseDivisionDto> {
-    try {
-      const errors = await validate(newChildrenData);
-      if (errors.length > 0) {
-        throw new BadRequestException('Datos de entrada invalidos.');
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      throw new ForbiddenException();
-    }
-    return this.divisionService.padreAddHijo(parentId, newChildrenData);
   }
 
   @Put('padre/retira:parentId')
-  @ApiOperation({ summary: 'retira un hijo a un padre' })
+  @ApiOperation({ summary: 'retira uno o muchos hijos a un padre' })
   @ApiOkResponse({ type: ResponseDivisionDto })
   async padreDelHijo(
     @Param('parentId') parentId: number,

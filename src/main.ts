@@ -15,6 +15,8 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, documentFactory);
   app.useGlobalPipes(
     new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
       exceptionFactory: (validationErrors) => {
         const errors = validationErrors.map((err) => ({
           field: err.property,

@@ -1,4 +1,12 @@
-import { IsInt, IsString, IsNotEmpty, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  Min,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateDivisionDto {
@@ -33,4 +41,12 @@ export class CreateDivisionDto {
   })
   @IsString()
   embajador: string;
+  @ApiProperty({
+    description: 'Id optional del Padre',
+    example: '101',
+    minimum: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  parentId: number;
 }

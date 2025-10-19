@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  NotImplementedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,6 +19,10 @@ export class DivisionService {
     private divisionRepository: Repository<Division>,
   ) {}
 
+  private async saveDivision(division: CreateDivisionDto) {
+    const newDivision = this.divisionRepository.create(division);
+    return await this.divisionRepository.save(newDivision);
+  }
   /**
    * create una nueva division
    * @param division
@@ -49,19 +54,16 @@ export class DivisionService {
    * @returns {Promise<Division[]>}
    */
   async soloById(id: number): Promise<Division> {
-    const division = await this.divisionRepository.find({
-      where: { id: id },
-      relations: ['divisiones', 'parent'],
-    });
-    if (!division) {
+    try {
+      const division = await this.divisionRepository.findOneOrFail({
+        where: { id: id },
+        relations: ['divisiones', 'parent'],
+      });
+
+      return division;
+    } catch {
       throw new NotFoundException('Division no encontrada');
     }
-
-    if (!Array.isArray(division)) {
-      throw new NotFoundException('No tiene elementos');
-    }
-
-    return division[0];
   }
 
   /**
@@ -70,45 +72,51 @@ export class DivisionService {
    * @returns {Promise<Division[]>}
    */
   async hijosById(id: number): Promise<Division[]> {
-    const division = await this.divisionRepository.find({
-      where: { id: id },
-      relations: ['divisiones'],
-    });
-    if (!division) {
+    try {
+      const division = await this.divisionRepository.findOneOrFail({
+        where: { id: id },
+        relations: ['divisiones'],
+      });
+      return division.divisiones;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
       throw new NotFoundException('Division no encontrada');
     }
-    if (!Array.isArray(division)) {
-      throw new NotFoundException('No tiene elementos');
-    }
-    return division[0].divisiones;
   }
 
   /**
    * Asigna un padre a una Division identificada por su Id
    * @param {number} id
-   * @param {Division} parent
+   * @param {Division} parentId
    * @returns Promise<Division | null>
    */
   async setPadre(id: number, parentId: number): Promise<Division | null> {
-    if (id == parentId) {
-      throw new BadRequestException(
-        'No se puede asignar el mismo elemento como padre.',
-      );
-    }
-    const division = await this.divisionRepository.findOneBy({ id: id });
-    if (!division) {
-      throw new NotFoundException('Division no encontrada');
-    }
-    const divisionPadre = await this.divisionRepository.findOneBy({
-      id: parentId,
-    });
-    if (!divisionPadre) {
-      throw new NotFoundException('Division Padre no encontrada');
-    }
+    try {
+      if (id == parentId) {
+        throw new BadRequestException(
+          'No se puede asignar el mismo elemento como padre.',
+        );
+      }
+      const division = await this.divisionRepository.findOneByOrFail({
+        id: id,
+      });
 
-    division.parent = divisionPadre;
-    await this.divisionRepository.save(division);
-    return division;
+      const divisionPadre = await this.divisionRepository.findOneByOrFail({
+        id: parentId,
+      });
+
+      division.parent = divisionPadre;
+      await this.divisionRepository.save(division);
+      return division;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException(
+          'No se puede asignar el mismo elemento como padre.',
+        );
+      } else {
+        throw new NotFoundException('Una de las divisiones no fue encontrada');
+      }
+    }
   }
 
   /**
@@ -118,25 +126,33 @@ export class DivisionService {
    * @returns
    */
 
-  async updateDivision(
-    id: number,
-    updatedData: UpdateDivisionDto,
-  ): Promise<Division> {
-    const parent = await this.divisionRepository.findOneBy({ id });
-    if (!parent) {
-      throw new Error('Division no encontrada');
-    }
-    // eslint-disable-next-line no-extra-boolean-cast
-    if (!!updatedData.nombre) {
-      const exists = await this.divisionRepository.findOne({
-        where: { nombre: updatedData.nombre },
-      });
-      if (exists) {
-        throw new ConflictException('Ya existe una Division con ese nombre');
+  async update(id: number, updatedData: UpdateDivisionDto): Promise<Division> {
+    try {
+      const parent = await this.divisionRepository.findOneBy({ id });
+      if (!parent) {
+        throw new NotFoundException('Division no encontrada');
+      }
+      // eslint-disable-next-line no-extra-boolean-cast
+      if (!!updatedData.nombre) {
+        const exists = await this.divisionRepository.findOne({
+          where: { nombre: updatedData.nombre },
+        });
+        if (exists) {
+          throw new ConflictException('Ya existe una Division con ese nombre');
+        }
+      }
+      Object.assign(parent, updatedData);
+      const updatedDivision = await this.divisionRepository.save(parent);
+      return updatedDivision;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException('Division no encontrada');
+      } else {
+        throw new NotImplementedException(
+          'Una de las divisiones no fue encontrada',
+        );
       }
     }
-    Object.assign(parent, updatedData);
-    return this.divisionRepository.save(parent);
   }
 
   /**
@@ -145,21 +161,30 @@ export class DivisionService {
    * @param newChildrenData
    * @returns
    */
-  async padreAddHijo(
-    parentId: number,
-    newChildrenData: CreateDivisionDto,
-  ): Promise<Division> {
-    const parent = await this.divisionRepository.findOne({
-      where: { id: parentId },
-      relations: ['divisiones'],
-    });
-    if (!parent) {
-      throw new NotFoundException('Padre no encontrado');
+  async agrega(newChildrenData: CreateDivisionDto): Promise<Division> {
+    const parentId = newChildrenData.parentId;
+    if (parentId) {
+      const parent = await this.divisionRepository.findOne({
+        where: { id: parentId },
+        relations: ['divisiones'],
+      });
+      if (!parent) {
+        throw new NotFoundException('Padre no encontrado');
+      }
+      const exists = await this.divisionRepository.findOne({
+        where: { nombre: newChildrenData.nombre },
+      });
+      if (exists) {
+        throw new ConflictException('Ya existe una Division con ese nombre');
+      }
+      const newChildren = await this.saveDivision(newChildrenData);
+      parent.divisiones.push(newChildren);
+      await this.divisionRepository.save(parent);
+      return newChildren;
+    } else {
+      const newChildren = await this.saveDivision(newChildrenData);
+      return newChildren;
     }
-    const newChildren = this.divisionRepository.create(newChildrenData);
-    parent.divisiones.push(newChildren);
-    await this.divisionRepository.save(parent);
-    return parent;
   }
 
   /**
