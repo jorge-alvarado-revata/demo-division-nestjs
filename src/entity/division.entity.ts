@@ -30,7 +30,9 @@ export class Division {
   @Column({ type: 'varchar', length: 100, nullable: true })
   embajador: string;
 
-  @ManyToOne(() => Division, (division) => division.divisiones)
+  @ManyToOne(() => Division, (division) => division.divisiones, {
+    onDelete: 'SET NULL',
+  })
   parent: Division;
 
   @OneToMany(() => Division, (division) => division.parent, {
