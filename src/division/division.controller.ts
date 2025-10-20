@@ -10,6 +10,7 @@ import {
   BadRequestException,
   NotFoundException,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { DivisionService } from './division.service';
 import { ResponseDivisionDto } from './dto/response-division.dto';
@@ -24,6 +25,7 @@ import {
 } from '@nestjs/swagger';
 import { UpdateDivisionDto } from './dto/update-division.dto';
 import { EliminaHijosDto } from './dto/elimina-hijos-division.dto';
+import { SelDivisionDto } from './dto/sel-division.dto';
 
 @ApiTags('divisiones')
 @Controller('division')
@@ -62,6 +64,19 @@ export class DivisionController {
   })
   todos(): Promise<ResponseDivisionDto[]> {
     return this.divisionService.getTodos();
+  }
+
+  @Get('filtro')
+  @ApiOperation({
+    summary: 'Obtiene las divisiones que coinciden con el nombre',
+  })
+  @ApiOkResponse({
+    description: 'Una lista de divisiones',
+    type: SelDivisionDto,
+    isArray: true,
+  })
+  async filtro(@Query('nombre') nombre: string): Promise<SelDivisionDto[]> {
+    return this.divisionService.filtro(nombre);
   }
 
   @Get('hijos/:id')
