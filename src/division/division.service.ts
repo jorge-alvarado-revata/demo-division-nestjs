@@ -12,6 +12,7 @@ import { CreateDivisionDto } from './dto/create-division.dto';
 import { ResponseDivisionDto } from './dto/response-division.dto';
 import { UpdateDivisionDto } from './dto/update-division.dto';
 import { EliminaHijosDto } from './dto/elimina-hijos-division.dto';
+import { SelDivisionDto } from './dto/sel-division.dto';
 
 @Injectable()
 export class DivisionService {
@@ -50,9 +51,10 @@ export class DivisionService {
     });
   }
 
-  async filtro(nombre: string): Promise<Division[]> {
-    return await this.divisionRepository.findBy({
-      nombre: Like(`%${nombre}%`),
+  async filtro(nombre: string): Promise<SelDivisionDto[]> {
+    return await this.divisionRepository.find({
+      select: ['id', 'nombre'],
+      where: { nombre: Like(`%${nombre}%`) },
     });
   }
 
