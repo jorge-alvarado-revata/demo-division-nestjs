@@ -9,6 +9,7 @@ import {
   ForbiddenException,
   BadRequestException,
   NotFoundException,
+  Patch,
 } from '@nestjs/common';
 import { DivisionService } from './division.service';
 import { ResponseDivisionDto } from './dto/response-division.dto';
@@ -98,7 +99,7 @@ export class DivisionController {
     return this.divisionService.setPadre(id, parentId);
   }
 
-  @Put('update/:id')
+  @Patch('update/:id')
   @ApiOperation({ summary: 'actualiza datos de una division' })
   @ApiBody({ type: UpdateDivisionDto })
   @ApiOkResponse({ type: ResponseDivisionDto })
